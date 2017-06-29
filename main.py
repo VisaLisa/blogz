@@ -1,10 +1,9 @@
 from flask import Flask, request, redirect, render_template
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost:8889/build-a-blog'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://build-a-blog:enterbab@localhost:8889/build-a-blog'
 app.config['SQLALCHEMY_ECHO'] = True
 db = SQLAlchemy(app)
 
@@ -12,44 +11,55 @@ db = SQLAlchemy(app)
 class Blog(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255))
-    content = db.Column(db.Text)
-    author_id = db.Column(db.Integer(11))
-    date_posted = db.Column(db.DateTime)
+    title = db.Column(db.String(120))
+    content = db.Column(db.String(500))
 
-    def __init__(self, title, post, author_id, date_posted = None):
+    def __init__(self, title, content):
         self.title = title
         self.content = content
-        self.author_id = author_id
-        if date_posted is None:
-            date_posted = datetime.utcnow()
-        self.date_posted = date_posted
 
-@app.route('/')
+
+@app.route('/', methods=['POST', 'GET'])
 def index():
     return redirect('/blog')
 
-@app.route('/newpost', methods=['POST', 'GET'])
-def newpost():
-    name = request.form['name']
-    entry = request.form['entry']
-    error = ''
-    if name == '' or entry == '':
-        error = 'Please enter text'
-        return render_template('newpost.html', error=error)
-    else:
-        new_post = Blog(name,entry)
-        db.session.add(new_post)
-        db.session.commit()
-
-
 @app.route('/blog', methods=['POST', 'GET'])
-def blogposts():
+def all_blog():
     blogs = Blog.query.all()
-    return render_template('blog.html',title=title,
-        name=name , body=body)
+    return render_template('blogs.html', title='Your Blog', blogs = blogs)
+
+def selected_blog():
+    blog_id = request.args.get('id')
+    blog_post = Blog.query.filter_by(blog_id).first()
+    return render_template('selected_blog.html', title='Selected Blog' , blogs = blogs)
 
 
+@app.route('/newpost', methods=['POST','GET'])
+def new_blog():
+    #currently no errors
+    title_error = ''
+    content_error = ''
+
+    if request.method == 'POST':
+        blog_title = request.form['title']
+        blog_content = request.form['content']
+        new_post = Blog(title=blog_title,content=blog_content)
+    # TODO: no title error send to newpost
+    elif blog_title == "":
+        title_error = 'Eh...Try Again'
+        return render_template('newpost.html', title_error=title_error)
+
+    # TODO: no content error send to newpost
+    elif blog_content == "":
+        content_error = 'Write something!'
+        return render_template('newpost.html', content_error=content_error)
+
+    # TODO:redirect to blog
+    else:
+        db.session.add(new_blog)
+        db.session.commit()
+        new_blog = str(blog_title, blog_content)
+    return render_template('newpost.html', title='New Blog')
 
 
 
