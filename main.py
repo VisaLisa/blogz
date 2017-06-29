@@ -15,7 +15,7 @@ class Blog(db.Model):
     content = db.Column(db.String(500))
     author_id = db.Column(db.String(120))
 
-    def __init__(self, title, content):
+    def __init__(self, title, content, author_id):
         self.title = title
         self.content = content
         self.author_id = author_id
