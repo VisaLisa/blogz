@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block content %}
 
 <h2>Write a New Blog Post</h2>
@@ -8,13 +7,13 @@
 <form method='post'>
     <div>
         <label>Title</br>
-            <input type="text" name="post_title" value="{{post_title}}"/>
+            <input type="text" name="blog_title" value="{{blog_title}}"/>
         </label>
     </div>
     </br>
     <div>
         <label>Body</br>
-            <textarea rows="10" cols="50" name="post_body" value="{{post_body}}"></textarea>
+            <textarea name="blog_body" value="{{blog_body}}"></textarea>
         </label>
     </div>
     <input type="submit" value="Post"/>
