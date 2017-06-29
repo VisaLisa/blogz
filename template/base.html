@@ -2,20 +2,18 @@
 <html>
     <head>
         <title>{{title}}</title>
-        <style type="text/css">
-            .error {
-                color: red;
-            }
-        </style>
+        <link rel="stylesheet" type="text/css" href="../static/style.css">
     </head>
 <body>
     <div>
         <h1>Build-A-Blog</h1>
     </div>
+    <nav>
       <ul>
         <li><a href="/blog">Home Page</a></li>
         <li><a href="/newpost">Create a New Post</a></li>
       </ul>
+    </nav>
     </br>
 
     {% block content %}
