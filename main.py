@@ -13,10 +13,12 @@ class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120))
     content = db.Column(db.String(500))
+    author_id = db.Column(db.String(120))
 
     def __init__(self, title, content):
         self.title = title
         self.content = content
+        self.author_id = author_id
 
 # TODO: #landing page redirected to blog
 @app.route('/', methods=['POST', 'GET'])
