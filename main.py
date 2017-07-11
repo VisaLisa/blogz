@@ -27,7 +27,7 @@ def index():
 # TODO:redirected from / showing all blogs
 @app.route('/blog', methods=['GET'])
 def blog():
-    blog = Blog.query.all()
+    blogs = Blog.query.all()
     print(blogs[0].title)
     return render_template('blog.html', title='Your Blog')
 
@@ -64,11 +64,12 @@ def new_blog():
     # TODO:redirect to blog
         if error_check == True:
             return render_template('newpost.html', title_error=title_error, content_error=content_error)
-
+    
         new_blog = Blog(blog_title,blog_content)
         db.session.add(new_blog)
         db.session.commit()
-        return redirect('/selected_blog?id={{blog_id}}')
+        blog_id = str(blog.id)
+        return redirect("/blog?id=" + blog_id)
     return render_template('newpost.html')
 
 if __name__ == '__main__':
