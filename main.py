@@ -52,6 +52,19 @@ def login():
 
 #TODO signup.html
 @app.route('/signup')
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['username']
+        verify = request.form['verify']  #not sure about this verify, check LC's github example
+
+    #TODO: validate user's data
+    existing_user = User.query.filter_by(username=username).first()
+    if not existing_user:
+        new_user =User(username, password)
+        db.session.add(new_user)
+        db.session.commit()
+        session['username']=username
+        return redirect('/login')
 
 
 #TODO index.html
