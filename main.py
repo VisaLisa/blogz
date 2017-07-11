@@ -26,31 +26,52 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, AUTO_INCREMENT)
     username = db.Column(db.String(15))
     password = db.Column(db.String(20))
-    blogs = db.relationship('Blogz', backref='owner')
+    posts = db.relationship('Blogz', backref='author')
 
     def__init__(self, username, password):
         self.username = username
         self.password = password
 
-#TODO before getting to blog - signup.html
-@app.route('/signup', methods=['POST', 'GET'])
-
 #TODO login.html
+@app.before_request
 @app.route('/login', methods=['POST', 'GET'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and user.password == password:
+            session['username'] = username
+            flash("You're logged in!")
+            return redirect('/blog')
+        else:
+            flash('Username and/or password is incorrect, Try again')
+
+    return render_template('login.html')
+
+
+#TODO signup.html
+@app.route('/signup')
+
 
 #TODO index.html
-@app.route('/index', methods=['POST', 'GET'])
+@app.route('/index')
 
-#TODO logout.html
+#TODO logout.html ; We'll have a logout function that handles a POST request to /logout and redirects the user to /blog after deleting the username from the session
 @app.route('/logout', methods=['POST'])
 def logout():
+    del session['email']
     return redirect('/blog')
 
-# TODO: #landing page redirected to blog
+#TODO: singleUser.html template that will be used to display only the blogs associated with a single given author. It will be used when we dynamically generate a page using a GET request with a user query parameter on the /blog route (similar to how we dynamically generated individual blog entry pages in the last assignment)
+@app.route('/singleUser', methods=['GET'])
+def display_user_post():
+    user_post =
+
+# TODO: landing page redirected to blog
 @app.route('/')
 def index():
     return redirect('/blog')
-
 
 # TODO: redirected from / showing all blogs
 @app.route('/blog', methods=['GET'])
