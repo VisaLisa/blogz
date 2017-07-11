@@ -2,11 +2,9 @@
 {% block content %}
 
         {% for blog in blogs %}
-      <div >
+      <div>
         <h2>{{blog.title}}<a></h2>
         <p>{{blog.content}}</p>
       </div>
         {% endfor %}
-    {% endif %}
-
 {% endblock %}
