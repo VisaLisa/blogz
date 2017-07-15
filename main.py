@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, render_template
+from flask import Flask, request, redirect, render_template, flash
 from flask_sqlalchemy import SQLAlchemy
 
 #TODO import os deplaying with heroku
@@ -8,6 +8,7 @@ app.config['DEBUG'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:enter@localhost:8889/blogz'
 app.config['SQLALCHEMY_ECHO'] = True
 db = SQLAlchemy(app)
+#app.secret_key = ''
 
 
 class Blogz(db.Model):
@@ -15,11 +16,15 @@ class Blogz(db.Model):
     title = db.Column(db.String(120))
     content = db.Column(db.String(1500))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    pub_date = db.Column(db.DateTime)
 
     def __init__(self, title, content):
         self.title = title
         self.content = content
         self.author = author
+        if pub_date is None:
+            pub_date = datetime.utcnow()
+        self.pub_date = pub_date
 
 #TODO add user class
 class User(db.Model):
@@ -33,7 +38,38 @@ class User(db.Model):
         self.password = password
 
 #TODO login.html
-@app.before_request
+@app.before_request():
+def req_login():
+    allowed_routes = ['login', 'signup', 'index', 'blog']
+    if request.endpoint not in allowed_routes and 'username' not in session:
+        return redirect('/login')
+
+#TODO logout.html ; We'll have a logout function that handles a POST request to /logout and redirects the user to /blog after deleting the username from the session
+@app.route('/logout', methods=['POST'])
+def logout():
+    del session['email']
+    return redirect('/blog')
+
+#TODO signup.html
+@app.route('/signup', methods=['POST','GET'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        verify_pw = request.form['verify_pw']
+
+    #TODO: validate user's data
+    existing_user = User.query.filter_by(username=username).first()
+    if not existing_user == "" or password == "" or verify_pw == "":
+        flash ("Your Username and/or Password is invalid")
+        new_user =User(username, password)
+        db.session.add(new_user)
+        db.session.commit()
+        session['username']=username
+        return redirect('/login')
+
+
+
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
@@ -50,31 +86,11 @@ def login():
     return render_template('login.html')
 
 
-#TODO signup.html
-@app.route('/signup')
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['username']
-        verify = request.form['verify']  #not sure about this verify, check LC's github example
-
-    #TODO: validate user's data
-    existing_user = User.query.filter_by(username=username).first()
-    if not existing_user:
-        new_user =User(username, password)
-        db.session.add(new_user)
-        db.session.commit()
-        session['username']=username
-        return redirect('/login')
 
 
 #TODO index.html
 @app.route('/index')
 
-#TODO logout.html ; We'll have a logout function that handles a POST request to /logout and redirects the user to /blog after deleting the username from the session
-@app.route('/logout', methods=['POST'])
-def logout():
-    del session['email']
-    return redirect('/blog')
 
 #TODO: singleUser.html template that will be used to display only the blogs associated with a single given author. It will be used when we dynamically generate a page using a GET request with a user query parameter on the /blog route (similar to how we dynamically generated individual blog entry pages in the last assignment)
 @app.route('/singleUser', methods=['GET'])
