@@ -101,11 +101,13 @@ def login():
             session['username'] = username
             flash("You're logged in!")
             return redirect('/blog')
-        else:
-            flash('Username and/or password is incorrect, Try again')
+        elif user == None:
+            flash('Username and/or password is incorrect - Try again.')
+        elif user.password != password:
+            flash("Your password does not match - Try again")
 
-    return render_template('login.html')
-
+    return render_template('login.html', title="Log in", username=username)
+return render_template ('login.html', title="Log in")
 
 
 
