@@ -12,13 +12,13 @@ db = SQLAlchemy(app)
 
 
 class Blogz(db.Model):
-    id = db.Column(db.Integer, primary_key=True, AUTO_INCREMENT)
+    id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120))
     content = db.Column(db.String(1500))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     pub_date = db.Column(db.DateTime)
 
-    def __init__(self, title, content):
+    def __init__(self, title, content, author, pub_date):
         self.title = title
         self.content = content
         self.author = author
@@ -26,10 +26,9 @@ class Blogz(db.Model):
             pub_date = datetime.utcnow()
         self.pub_date = pub_date
 
-#TODO add user class
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True, AUTO_INCREMENT)
-    username = db.Column(db.String(15))
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(15), unique=True)
     password = db.Column(db.String(20))
     posts = db.relationship('Blogz', backref='author')
 
@@ -37,7 +36,6 @@ class User(db.Model):
         self.username = username
         self.password = password
 
-#TODO login.html
 @app.before_request():
 def req_login():
     allowed_routes = ['login', 'signup', 'index', 'blog']
@@ -47,7 +45,7 @@ def req_login():
 #TODO logout.html ; We'll have a logout function that handles a POST request to /logout and redirects the user to /blog after deleting the username from the session
 @app.route('/logout', methods=['POST'])
 def logout():
-    del session['email']
+    del session['username']
     return redirect('/blog')
 
 #TODO signup.html
@@ -61,7 +59,7 @@ def signup():
         error_signup = False
 
     #TODO: validate user's data and/or return error
-    if not existing_user == "" or password == "" or verify_pw == "":
+    if not username == "" or password == "" or verify_pw == "":
         flash ("Your Username and/or Password is invalid")
         error_signup = True
     if not verify_length(username):
@@ -90,7 +88,6 @@ def signup():
     return render_template("/signup.html", title="Sign Up")
 
 
-
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
@@ -100,19 +97,15 @@ def login():
         if user and user.password == password:
             session['username'] = username
             flash("You're logged in!")
-            return redirect('/blog')
+            return redirect('/newpost')
         elif user == None:
             flash('Username and/or password is incorrect - Try again.')
+            return redirect('/login')
         elif user.password != password:
             flash("Your password does not match - Try again")
+            return redirect('/login')
 
     return render_template('login.html', title="Log in", username=username)
-return render_template ('login.html', title="Log in")
-
-
-
-#TODO index.html
-@app.route('/index')
 
 
 #TODO: singleUser.html template that will be used to display only the blogs associated with a single given author. It will be used when we dynamically generate a page using a GET request with a user query parameter on the /blog route (similar to how we dynamically generated individual blog entry pages in the last assignment)
@@ -120,19 +113,17 @@ return render_template ('login.html', title="Log in")
 def display_user_post():
     user_post =
 
-# TODO: landing page redirected to blog
-@app.route('/')
+# TODO: index.html
+@app.route('/', methods=['POST', 'GET'])
 def index():
-    return redirect('/blog')
+    users = User.query.all()
+    return render_template('index.html', users=users)
 
-# TODO: redirected from / showing all blogs
 @app.route('/blog', methods=['GET'])
 def blog():
     blogs = Blogz.query.all()
     return render_template('blog.html', title='Your Blog', blogs=blogs)
 
-
-# TODO: query all blogs and return/gets the selected blog
 @app.route('/selected_blog', methods=['GET'])
 def selected_blog():
     blog_id = request.args.get('id')
@@ -151,6 +142,7 @@ def newpost():
     if request.method == 'POST':
         blog_title = request.form['blog_title']
         blog_content = request.form['blog_content']
+        username = session['username']
 
         # no title error send to newpost
         if not blog_title:
@@ -165,12 +157,14 @@ def newpost():
             # redirect to blog
         if error_check:
             return render_template('newpost.html', title_error=title_error, content_error=content_error)
-
-        new_blog = Blogz(blog_title, blog_content)
+        elif:
+        new_blog = Blogz(blog_title, blog_content, username)
         db.session.add(new_blog)
         db.session.commit()
         blog_id = str(new_blog.id)
-        return redirect("/blog?id=" + blog_id)
+        return redirect('/blog?id=' + str(blog_id))
+
+    if request.method == 'GET':
     return render_template('newpost.html')
 
 

@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% block title %} Blogz {% endblock %}
+{% block header %} Blog Post {% endblock %}
 {% block content %}
 
 {% if blogs|length == 0 %}
@@ -7,8 +9,9 @@
 
         {% for blog in blogs %}
         <div>
-          <h2><a href="./selected_blog?id={{ blog.id }}">{{blog.title}}</a></h2>
+          <h2><a href="{{ "./selected_blog?id=" ~ blog.id }}">{{blog.title}}</a></h2>
           <p>{{blog.content}}</p>
+          <p class="author">by <a href ={{ "/blog?user=" ~ blog.user.username }} > {{blog.user.username}} </a></p>
         </div>
         <hr/>
         {% endfor %}
