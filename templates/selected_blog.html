@@ -1,12 +1,13 @@
 
 {% extends "base.html" %}
-{% block title %} Blog Post {% endblock %}
+{% block title %} Selected Blog Post {% endblock %}
 {% block content %}
-    <div><
+    <div>
 
-    <h2>{{selected_blog.title}}</h2>
-    <p>{{selected_blog.content}}</p>
-    <p class="post-author">By <a href= {{ "/blog?user=" ~ blog.user.username }} > {{blog.user.username}} </a></p>
+    <h2>{{blog.title}}</h2>
+    <p>{{blog.content}}</p>
+    <p class="users">Written by <a href= "/blog?user= {{ user.id }}"> {{ user.username }} </a></p>
+    <p>{{blog.pubdate}}</p>
 
     </div>
 

@@ -1,14 +1,14 @@
-from flask import Flask, request, redirect, render_template, flash
+from flask import Flask, request, redirect, render_template, flash, session
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
-#TODO import os deplaying with heroku
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:enter@localhost:8889/blogz'
 app.config['SQLALCHEMY_ECHO'] = True
 db = SQLAlchemy(app)
-#app.secret_key = ''
+app.secret_key = "jfie838jFJf5h03.s{#"
 
 
 class Blogz(db.Model):
@@ -16,76 +16,104 @@ class Blogz(db.Model):
     title = db.Column(db.String(120))
     content = db.Column(db.String(1500))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    pub_date = db.Column(db.DateTime)
+    pubdate = db.Column(db.DateTime)
 
-    def __init__(self, title, content, author, pub_date):
+    def __init__(self, title, content, author_id, pubdate = None):
         self.title = title
         self.content = content
-        self.author = author
-        if pub_date is None:
-            pub_date = datetime.utcnow()
-        self.pub_date = pub_date
+        self.author_id = author_id
+        if pubdate is None:
+            pubdate = datetime.utcnow()
+        self.pubdate = pubdate
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(15), unique=True)
     password = db.Column(db.String(20))
-    posts = db.relationship('Blogz', backref='author')
+    blogs = db.relationship('Blogz', backref='user')
 
-    def__init__(self, username, password):
+    def __init__(self, username, password):
         self.username = username
         self.password = password
 
-@app.before_request():
+def getAllBlog():
+    return Blogz.query.all()
+
+def getAllUser():
+    return User.query.all()
+
+@app.before_request
 def req_login():
     allowed_routes = ['login', 'signup', 'index', 'blog']
     if request.endpoint not in allowed_routes and 'username' not in session:
         return redirect('/login')
 
-#TODO logout.html ; We'll have a logout function that handles a POST request to /logout and redirects the user to /blog after deleting the username from the session
-@app.route('/logout', methods=['POST'])
+@app.route('/logout')
 def logout():
     del session['username']
     return redirect('/blog')
 
-#TODO signup.html
 @app.route('/signup', methods=['POST','GET'])
 def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         verify_pw = request.form['verify_pw']
-        existing_user = User.query.filter_by(username=username).first()
-        error_signup = False
+        user = User.query.filter_by(username=username).first()
 
-    #TODO: validate user's data and/or return error
-    if not username == "" or password == "" or verify_pw == "":
-        flash ("Your Username and/or Password is invalid")
-        error_signup = True
-    if not verify_length(username):
-        flash("Your username should be between 5 and 20 characters.")
-        error_signup = True
-    if not verify_length(password):
-        flash("Your password should be between 5 and 20 characters.")
-        error_signup = True
-    if not password != verify_pw:
-        flash("Your passwords don't match - Please try again.")
-        error_signup = True
-    if not existing_user:
-        flash("The username your are trying to use it already taken - Please try again.")
-        error_signup = True
-    if not error_signup == True:
-        return render_template("/signup.html", title="Sign Up", username=username)
+        username_error=''
+        password_error=''
+        verify_pw_error=''
 
-    #TODO: adding new user to the database
-    if not  existing_user and password == verify_pw:
-        new_user =User(username, password)
-        db.session.add(new_user)
-        db.session.commit()
-        session['username']=username
-        return redirect('/login')
+        #add new user to database
+        if not user and len(password) > 3 and password == verify_pw:
+            new_user = User(username, password)
+            db.session.add(new_user)
+            db.session.commit()
+            session['username'] = username
+            return redirect('/newpost')
 
-    return render_template("/signup.html", title="Sign Up")
+        #verify username
+        if username == '' or password == '' or verify_pw == '':
+            flash ('Your Username and/or Password is invalid')
+            username_error = False
+            password_error = False
+            verify_pw_error = False
+
+        if username == '':
+            username_error = False
+            username = ''
+            flash('Your username should be between 5 and 20 characters.')
+
+        elif len(username) < 3:
+            username_error = False
+            username = ''
+            flash('Your username should be between 5 and 20 characters.')
+
+        elif existing_user:
+            username_error = False
+            username = ''
+            flash('The username your are trying to use it already taken - Please try again.')
+
+        #verify Passwords
+        if password == '':
+            password_error = False
+            password = ''
+            flash('Please enter password')
+
+        elif len(password) < 5:
+            password_error = False
+            password = ''
+            flash('Your password should be between 5 and 20 characters.')
+
+        elif password != verify_pw:
+            password_error = False
+            password = ''
+            flash('Your passwords do not match - Please try again.')
+
+        return render_template('/newpost.html', username=username, username_error=username_error, password_error=password_error, verify_pw_error=verify_pw_error)
+
+    return render_template("/signup.html")
 
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -94,41 +122,70 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
+
+        username_error = ""
+        password_error = ""
+
         if user and user.password == password:
             session['username'] = username
-            flash("You're logged in!")
+            flash('You are logged in!')
             return redirect('/newpost')
-        elif user == None:
-            flash('Username and/or password is incorrect - Try again.')
-            return redirect('/login')
-        elif user.password != password:
-            flash("Your password does not match - Try again")
-            return redirect('/login')
 
-    return render_template('login.html', title="Log in", username=username)
+        elif user == '':
+            username_error = False
+            username = ''
+            flash('Username is not filled - Try again.')
 
 
-#TODO: singleUser.html template that will be used to display only the blogs associated with a single given author. It will be used when we dynamically generate a page using a GET request with a user query parameter on the /blog route (similar to how we dynamically generated individual blog entry pages in the last assignment)
-@app.route('/singleUser', methods=['GET'])
-def display_user_post():
-    user_post =
+        elif not user:
+            username_error = True
+            username = ''
+            flash ('Username does not exist')
 
-# TODO: index.html
+
+        if password == "":
+            password_error = False
+            password = ''
+            flash('Your password does not match - Try again')
+
+        return render_template("login.html", username=username, username_error=username_error, password_error=password_error)
+
+    return render_template("login.html")
+
+
 @app.route('/', methods=['POST', 'GET'])
 def index():
     users = User.query.all()
-    return render_template('index.html', users=users)
+    return render_template('index.html', title='Home', users=users)
 
+@app.route('/singleuser', methods=['GET'])
+def showuser():
+    users = User.query.filter_by(username=session['user_id']).first()
+    user_id = request.args.get('users')
+    blogs = Blog.query.filter_by(username=user_id).all()
+    return render_template('singleuser.html', users=users, blogs=blogs)
+
+
+
+# TODO: redirected from / showing all blogs
 @app.route('/blog', methods=['GET'])
 def blog():
     blogs = Blogz.query.all()
-    return render_template('blog.html', title='Your Blog', blogs=blogs)
+    blog_id = request.args.get('id')
+    blog_post = Blogz.query.filter_by(id=blog_id).first()
+    author_id = blog_post.author_id
+    user = User.query.get(author_id)
+    return render_template('blog.html', title='Your Blog', blogs=blogs, user_id=blog_id, username=author_id, blog=blog_post, user=user)
 
+# TODO: query all blogs and return/gets the selected blog
 @app.route('/selected_blog', methods=['GET'])
 def selected_blog():
     blog_id = request.args.get('id')
-    blog_post = Blogz.query.filter_by(id=blog_id).first()
-    return render_template('selected_blog.html', selected_blog=blog_post)
+    blog_post = Blogz.query.get(blog_id)
+    author_id = blog_post.author_id
+    user = User.query.get(author_id)
+    return render_template('selected_blog.html', user_id=blog_id, blog=blog_post, user=author_id, username=user)
+
 
 
 # TODO: new post and check for errors
@@ -139,14 +196,18 @@ def newpost():
     content_error = ''
     error_check = False
 
+    if request.method == 'GET':
+        return render_template('newpost.html', title="Add a Blog Entry")
+
     if request.method == 'POST':
         blog_title = request.form['blog_title']
         blog_content = request.form['blog_content']
-        username = session['username']
+        blog_pubdate = datetime.now()
+        author_id = User.query.filter_by(username=session['username']).first().id
 
         # no title error send to newpost
         if not blog_title:
-            title_error = 'Eh...Try Again'
+            title_error = 'No Title Written'
             error_check = True
 
             # no content error send to newpost
@@ -157,17 +218,15 @@ def newpost():
             # redirect to blog
         if error_check:
             return render_template('newpost.html', title_error=title_error, content_error=content_error)
-        elif:
-        new_blog = Blogz(blog_title, blog_content, username)
-        db.session.add(new_blog)
-        db.session.commit()
-        blog_id = str(new_blog.id)
-        return redirect('/blog?id=' + str(blog_id))
 
-    if request.method == 'GET':
-    return render_template('newpost.html')
+        if (not title_error and not content_error):
+            new_blog = Blogz(blog_title, blog_content, author_id)
+            db.session.add(new_blog)
+            db.session.commit()
+            blog_id = str(new_blog.id)
+            return redirect('/selected_blog?id='+ blog_id)
 
-
+    return render_template('newpost.html', title='New Post')
 
 
 if __name__ == '__main__':

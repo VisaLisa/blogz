@@ -1,20 +1,21 @@
 {% extends "base.html" %}
-{% block title %} Blog Entry{% endblock %}
+{% block title %} New Blog Entry{% endblock %}
 
 {% block content %}
 
 <h2>Write a New Blog Post</h2>
+    <p class="error">{{ title_error }}</p>
+    <p class="error">{{ content_error }}</p>
 <form method='post'>
     <div>
         <label>Title</br>
-            <input type="text" name="blog_title" value="{{ title }}"/>
-            <span class="error">{{title_error}}</span>
+            <input type="text" name="blog_title" value=""/>
         </label>
     </div>
     </br>
     <div>
         <label>Body</br>
-            <textarea name="blog_content" value="{{ content }}"></textarea>
+            <textarea name="blog_content" value=""></textarea>
             <span class="error">{{content_error}}</span>
         </label>
     </div>
